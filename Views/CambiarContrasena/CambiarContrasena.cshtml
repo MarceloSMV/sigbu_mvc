@@ -1,0 +1,53 @@
+﻿@{
+    ViewData["Title"] = "Cambiar Contraseña";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4">
+
+                    <h4 class="card-title text-center mb-4 fw-bold text-primary">Cambiar Contraseña</h4>
+
+                    @if (TempData["MensajeError"] != null)
+                    {
+                        <div class="alert alert-danger text-center">
+                            @TempData["MensajeError"]
+                        </div>
+                    }
+
+                    <form asp-controller="CambiarContrasena" asp-action="CambiarContrasena" method="post">
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Contraseña Actual</label>
+                            <input type="password" name="password_actual" class="form-control bg-light" required autofocus />
+                        </div>
+
+                        <hr class="my-4 text-muted opacity-25">
+
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Nueva Contraseña</label>
+                            <input type="password" name="nueva_password" class="form-control" required />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">Repetir Nueva Contraseña</label>
+                            <input type="password" name="confirmar_password" class="form-control" required />
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary py-2 fw-bold rounded-3">
+                                Actualizar Contraseña
+                            </button>
+                            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary py-2 rounded-3">
+                                Cancelar
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,80 @@
+﻿@{
+    ViewData["Title"] = "Panel de Control - Jefe";
+}
+
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Panel Administrativo</h2>
+
+    <div class="row g-4 justify-content-center">
+
+        <div class="col-md-4 col-sm-6">
+            <a asp-controller="Solicitudes" asp-action="Index" class="btn-opcion" style="background-color: #ffd43b;">
+                <i class="bi bi-check-circle-fill fs-1 mb-2 text-dark"></i>
+                <span class="fs-5 fw-bold text-dark">Aprobar solicitudes</span>
+            </a>
+        </div>
+
+        <div class="col-md-4 col-sm-6">
+            <a asp-controller="Trabajadores" asp-action="AdministrarTrabajadores" class="btn-opcion" style="background-color: #ffd43b;">
+                <i class="bi bi-people-fill fs-1 mb-2 text-dark"></i>
+                <span class="fs-5 fw-bold text-dark">Administrar Trabajadores</span>
+            </a>
+        </div>
+    </div>
+    <br />
+
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-4 col-sm-6">
+            <a asp-controller="Areas" asp-action="Index" class="btn-opcion" style="background-color: #e6fcf5;">
+                <i class="bi bi-building fs-1 mb-2 text-dark"></i>
+                <span class="fs-5 fw-bold text-dark">Administrar áreas</span>
+            </a>
+        </div>
+
+        <div class="col-md-4 col-sm-6">
+            <a asp-controller="Bienes" asp-action="Index" class="btn-opcion" style="background-color: #ffc9c9;">
+                <i class="bi bi-box-seam fs-1 mb-2 text-dark"></i>
+                <span class="fs-5 fw-bold text-dark">Administrar bienes</span>
+            </a>
+        </div>
+
+        <div class="col-md-4 col-sm-6">
+            <a asp-controller="Transferencias" asp-action="NuevaTransferencia" class="btn-opcion" style="background-color: #f3f0ff;">
+                <i class="bi bi-arrow-left-right fs-1 mb-2 text-dark"></i>
+                <span class="fs-5 fw-bold text-dark">Transferencia <small>[entre áreas]</small></span>
+            </a>
+        </div>
+
+        <div class="col-md-4 col-sm-6">
+            <a asp-controller="Reportes" asp-action="Index" class="btn-opcion" style="background-color: #fcc2d7;">
+                <i class="bi bi-file-earmark-pdf fs-1 mb-2 text-dark"></i>
+                <span class="fs-5 fw-bold text-dark">Generar reporte</span>
+            </a>
+        </div>
+
+    </div>
+
+
+
+</div>
+
+<style>
+    .btn-opcion {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 160px;
+        border-radius: 15px;
+        text-decoration: none;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.02);
+    }
+
+        .btn-opcion:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+            filter: brightness(0.97);
+        }
+</style>

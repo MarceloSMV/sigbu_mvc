@@ -1,0 +1,315 @@
+﻿@model IEnumerable<sigbu_mvc.Models.Usuario>
+@{
+    ViewData["Title"] = "Administrar Trabajadores";
+}
+
+<div class="container mt-4">
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body d-flex align-items-center p-4" style="background-color: #ffd43b; border-radius: 10px;">
+            <div class="me-3 bg-white p-3 rounded-circle shadow-sm text-dark">
+                <i class="bi bi-people-fill fs-1"></i>
+            </div>
+            <div>
+                <h2 class="mb-0 text-dark fw-bold">Administrar Trabajadores</h2>
+                <p class="text-dark mb-0 opacity-75">Gestión de acceso y datos del personal</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 gap-3">
+        <div class="input-group" style="max-width: 400px;">
+            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" id="buscador-dni" class="form-control" placeholder="Buscar por DNI..." autocomplete="off">
+        </div>
+        <button class="btn btn-warning fw-bold border border-dark" data-bs-toggle="modal" data-bs-target="#modalAgregar">
+            <i class="bi bi-person-plus-fill me-2"></i> Agregar Trabajador
+        </button>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tabla-trabajadores">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombres</th>
+                            <th>Ap. Paterno</th>
+                            <th>Ap. Materno</th>
+                            <th>DNI</th>
+                            <th>Usuario</th>
+                            <th>Correo</th>
+                            <th>Estado</th>
+                            <th class="text-center" style="width: 120px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr data-id="@item.id">
+                                <td><input type="text" class="form-control form-control-sm border-0 bg-transparent input-dato" name="nombres" value="@item.nombres" readonly required></td>
+                                <td><input type="text" class="form-control form-control-sm border-0 bg-transparent input-dato" name="ap_paterno" value="@item.ap_paterno" readonly required></td>
+                                <td><input type="text" class="form-control form-control-sm border-0 bg-transparent input-dato" name="ap_materno" value="@item.ap_materno" readonly required></td>
+                                <td><input type="text" class="form-control form-control-sm border-0 bg-transparent input-dato" name="dni" value="@item.dni" maxlength="8" minlength="8" pattern="\d{8}" readonly required></td>
+                                <td><input type="text" class="form-control form-control-sm border-0 bg-transparent input-dato" name="usuario_login" value="@item.usuario_login" readonly required></td>
+                                <td><input type="email" class="form-control form-control-sm border-0 bg-transparent input-dato" name="correo" value="@item.correo" readonly required></td>
+                                <td>
+                                    <select class="form-select form-select-sm border-0 bg-transparent input-dato" name="estado" disabled="disabled">
+                                        <option value="Activo" selected="@(item.estado == "Activo")">Activo</option>
+                                        <option value="Obsoleto" selected="@(item.estado == "Obsoleto")">Obsoleto</option>
+                                    </select>
+                                </td>
+                                <td class="text-center">
+                                    <button class="btn btn-outline-warning btn-sm btn-editar" title="Editar"><i class="bi bi-pencil-fill"></i></button>
+                                    <button class="btn btn-success btn-sm btn-guardar d-none" title="Guardar"><i class="bi bi-check-lg"></i></button>
+                                    <button class="btn btn-outline-secondary btn-sm btn-cancelar d-none" title="Cancelar"><i class="bi bi-x-lg"></i></button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAgregar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold">Nuevo Trabajador</h5>
+            </div>
+            <form asp-action="Agregar" method="post" id="form-agregar">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">DNI</label>
+                            <input type="text" name="dni" class="form-control" maxlength="8" minlength="8" pattern="\d{8}" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Usuario Login</label>
+                            <input type="text" name="usuario_login" class="form-control" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Nombres</label>
+                            <input type="text" name="nombres" class="form-control" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Correo</label>
+                            <input type="email" name="correo" class="form-control" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Ap. Paterno</label>
+                            <input type="text" name="ap_paterno" class="form-control" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Ap. Materno</label>
+                            <input type="text" name="ap_materno" class="form-control" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Contraseña</label>
+                            <input type="password" name="passwordInput" class="form-control" placeholder="Dejar vacío para usar DNI como contraseña" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-submit-agregar">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-5">
+    <a asp-controller="Login" asp-action="Login" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Panel Principal
+    </a>
+</div>
+
+<partial name="_MensajeSistema" />
+
+@section Scripts {
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+    <style>
+        .ui-autocomplete .ui-menu-item-wrapper {
+            background-color: #fff;
+            color: #000;
+            padding: 5px 10px;
+        }
+
+            .ui-autocomplete .ui-menu-item-wrapper.ui-state-active {
+                background-color: #ffd43b !important;
+                color: #000 !important;
+                border: 1px solid #e0c000;
+            }
+    </style>
+
+    <script>
+        $(document).ready(function() {
+
+            // 1. Buscador
+            $("#buscador-dni").autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: '@Url.Action("BuscarPorDni", "Trabajadores")',
+                        dataType: "json",
+                        data: { term: request.term },
+                        success: function(data) { response(data); }
+                    });
+                },
+                minLength: 2,
+                select: function(event, ui) {
+                    var dniSeleccionado = ui.item.value;
+                    $("#tabla-trabajadores tbody tr").each(function() {
+                        var rowDni = $(this).find("input[name='dni']").val();
+                        if (rowDni === dniSeleccionado) {
+                            $(this).show().addClass("table-warning");
+                            setTimeout(() => $(this).removeClass("table-warning"), 2000);
+                        } else { $(this).hide(); }
+                    });
+                }
+            });
+            $("#buscador-dni").on("input", function() { if($(this).val() === "") $("#tabla-trabajadores tbody tr").show(); });
+
+            // 2. Edición
+            $(".btn-editar").click(function() {
+                var row = $(this).closest("tr");
+                row.find("input.input-dato").removeAttr("readonly").removeClass("border-0 bg-transparent").addClass("bg-white border");
+                row.find("select.input-dato").prop("disabled", false).removeClass("border-0 bg-transparent").addClass("bg-white border");
+                row.find(".btn-editar").addClass("d-none");
+                row.find(".btn-guardar, .btn-cancelar").removeClass("d-none");
+                row.data("original", obtenerDatosFila(row));
+            });
+
+            $(".btn-cancelar").click(function() {
+                var row = $(this).closest("tr");
+                var original = row.data("original");
+                row.find("input[name='nombres']").val(original.nombres);
+                row.find("input[name='ap_paterno']").val(original.ap_paterno);
+                row.find("input[name='ap_materno']").val(original.ap_materno);
+                row.find("input[name='dni']").val(original.dni);
+                row.find("input[name='usuario_login']").val(original.usuario_login);
+                row.find("input[name='correo']").val(original.correo);
+                row.find("select[name='estado']").val(original.estado);
+                bloquearFila(row);
+            });
+
+            $(".btn-guardar").click(async function() {
+                var row = $(this).closest("tr");
+                var datos = obtenerDatosFila(row);
+                var id = row.data("id");
+                datos.id = id;
+
+                // VALIDACIÓN 1: Campos vacíos
+                for (var key in datos) {
+                    if (!datos[key] || (typeof datos[key] === "string" && datos[key].trim() === "")) {
+                        mensajeSistema(2, "Todos los campos son obligatorios.");
+                        return;
+                    }
+                }
+
+                // VALIDACIÓN 2: Longitud DNI (NUEVO)
+                if (datos.dni.length !== 8) {
+                    mensajeSistema(2, "El DNI debe tener exactamente 8 caracteres.");
+                    return;
+                }
+
+                try {
+                    const params = new URLSearchParams({ dni: datos.dni, login: datos.usuario_login, correo: datos.correo, idExcluir: id });
+                    const res = await fetch(`@Url.Action("VerificarExistencia", "Trabajadores")?${params}`);
+                    const existe = await res.json();
+
+                    if (existe.dni) { mensajeSistema(2, "El DNI ya está registrado."); return; }
+                    if (existe.login) { mensajeSistema(2, "El Usuario Login ya existe."); return; }
+                    if (existe.correo) { mensajeSistema(2, "El Correo ya está registrado."); return; }
+
+                    mensajeSistema(3, "¿Estás seguro de modificar los datos de este trabajador?", function() {
+                        $.ajax({
+                            url: '@Url.Action("Editar", "Trabajadores")',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(datos),
+                            success: function(response) {
+                                if (response.success) { bloquearFila(row); }
+                                else { mensajeSistema(2, response.mensaje); }
+                            },
+                            error: function() { mensajeSistema(2, "Error de conexión al guardar."); }
+                        });
+                    });
+                } catch (e) { mensajeSistema(2, "Error verificando datos."); }
+            });
+
+            // 3. Agregar
+            $("#btn-submit-agregar").click(async function() {
+                var form = $("#form-agregar");
+
+                // Validación nativa HTML5
+                if (!form[0].checkValidity()) {
+                    form[0].reportValidity();
+                    return;
+                }
+
+                var dni = form.find("input[name='dni']").val();
+
+                // VALIDACIÓN 1: Longitud DNI
+                if (dni.length !== 8) {
+                    // Invoca la misma alerta visual que usaría el controller
+                    mensajeSistema(2, "El DNI debe tener exactamente 8 caracteres.");
+                    return;
+                }
+
+                var login = form.find("input[name='usuario_login']").val();
+                var correo = form.find("input[name='correo']").val();
+
+                try {
+                    const params = new URLSearchParams({ dni: dni, login: login, correo: correo });
+                    const res = await fetch(`@Url.Action("VerificarExistencia", "Trabajadores")?${params}`);
+                    const existe = await res.json();
+
+                    // VALIDACIÓN 2: Duplicados (Secuencia Estricta: DNI -> Login -> Correo)
+        
+                    if (existe.dni) { 
+                        // Prioridad 1
+                        mensajeSistema(2, "El DNI ya está registrado."); 
+                    } 
+                    else if (existe.login) { 
+                        // Prioridad 2
+                        mensajeSistema(2, "El Usuario Login ya existe."); 
+                    } 
+                    else if (existe.correo) { 
+                        // Prioridad 3
+                        mensajeSistema(2, "El Correo ya está registrado."); 
+                    } 
+                    else { 
+                        // Si todo está limpio, enviamos al servidor
+                        form.submit(); 
+                    }
+
+                } catch (e) { 
+                    mensajeSistema(2, "Error al verificar datos."); 
+                }
+            });
+
+            function obtenerDatosFila(row) {
+                return {
+                    nombres: row.find("input[name='nombres']").val(),
+                    ap_paterno: row.find("input[name='ap_paterno']").val(),
+                    ap_materno: row.find("input[name='ap_materno']").val(),
+                    dni: row.find("input[name='dni']").val(),
+                    usuario_login: row.find("input[name='usuario_login']").val(),
+                    correo: row.find("input[name='correo']").val(),
+                    estado: row.find("select[name='estado']").val()
+                };
+            }
+
+            function bloquearFila(row) {
+                row.find("input.input-dato").attr("readonly", true).removeClass("bg-white border").addClass("border-0 bg-transparent");
+                row.find("select.input-dato").prop("disabled", true).removeClass("bg-white border").addClass("border-0 bg-transparent");
+                row.find(".btn-guardar, .btn-cancelar").addClass("d-none");
+                row.find(".btn-editar").removeClass("d-none");
+            }
+        });
+    </script>
+}

@@ -1,0 +1,64 @@
+﻿@using System.Security.Claims
+@{
+    ViewData["Title"] = "Restablecer Contraseña";
+    // Reemplaza esto con TU CLAVE DE SITIO real proporcionada por Google
+    string ReCaptchaSiteKey = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+}
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow" style="width: 100%; max-width: 450px; border-radius: 10px;">
+        <div class="card-header text-center bg-warning text-dark" style="border-top-left-radius: 10px; border-top-right-radius: 10px;">
+            <h4 class="mb-0 fw-bold">Reestablecer Contraseña</h4>
+        </div>
+        <div class="card-body p-4">
+
+            @if (TempData["Mensaje"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["Mensaje"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["MensajeError"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-x-circle-fill me-2"></i> @TempData["MensajeError"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <p class="text-muted">
+                Ingrese la dirección de correo electrónico con la que se registró.
+            </p>
+
+            <div class="alert alert-info small mt-3">
+                <i class="bi bi-info-circle-fill"></i>
+                <strong>NOTA:</strong> Si existe una cuenta asociada, se enviará un código con instrucciones.
+            </div>
+
+            <form asp-controller="RecuperarContrasena" asp-action="RestablecerContrasena" method="post">
+
+                <div class="mb-3">
+                    <label for="correo" class="form-label fw-bold">Correo electrónico</label>
+                    <input type="email" class="form-control" id="correo" name="correo" required placeholder="tu.correo@ejemplo.com">
+                </div>
+
+                <!-- ============================================= -->
+                <!-- GOOGLE RECAPTCHA WIDGET -->
+                <!-- ============================================= -->
+                <div class="mb-3 d-flex justify-content-center">
+                    <div class="g-recaptcha" data-sitekey="@ReCaptchaSiteKey"></div>
+                </div>
+
+                <div class="d-flex justify-content-between gap-2 mt-4">
+                    <a asp-controller="Login" asp-action="Login" class="btn btn-secondary flex-grow-1">Cancelar</a>
+                    <button type="submit" class="btn btn-warning fw-bold flex-grow-1">Enviar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Script obligatorio de Google -->
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>

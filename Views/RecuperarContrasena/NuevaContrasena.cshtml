@@ -1,0 +1,100 @@
+﻿@using System.Security.Claims
+@{
+    ViewData["Title"] = "Crear Nueva Contraseña";
+    string? token = TempData["ResetToken"]?.ToString();
+    TempData.Keep("ResetToken"); // Asegurar que el token se mantenga para el POST
+}
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow" style="width: 100%; max-width: 450px; border-radius: 10px;">
+        <div class="card-header text-center bg-danger text-white" style="border-top-left-radius: 10px; border-top-right-radius: 10px;">
+            <h4 class="mb-0 fw-bold">Reestablecer Contraseña</h4>
+        </div>
+        <div class="card-body p-4">
+
+            @if (TempData["MensajeError"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-x-circle-fill me-2"></i> @TempData["MensajeError"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                TempData.Remove("MensajeError");
+            }
+
+            <p class="text-muted fw-bold">
+                Crea una contraseña nueva de al menos 8 caracteres.
+            </p>
+
+            <form asp-controller="RecuperarContrasena" asp-action="NuevaContrasena" method="post" id="form-reset">
+                
+                <div class="mb-3">
+                    <label for="nueva_contrasena" class="form-label">Contraseña nueva</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="nueva_contrasena" name="nueva_contrasena" required minlength="8">
+                        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('nueva_contrasena', this)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="confirmar_contrasena" class="form-label">Confirmar contraseña</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="confirmar_contrasena" name="confirmar_contrasena" required minlength="8">
+                         <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('confirmar_contrasena', this)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between gap-2 mt-4">
+                    <a asp-controller="Login" asp-action="Login" class="btn btn-secondary flex-grow-1">Cancelar</a>
+                    <button type="submit" class="btn btn-danger fw-bold flex-grow-1">Reestablecer Contraseña</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Función para mostrar/ocultar contraseña
+        function togglePassword(fieldId, button) {
+            const field = document.getElementById(fieldId);
+            const icon = button.querySelector('i');
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+        
+        // Validación del formulario
+        document.getElementById('form-reset').addEventListener('submit', function(e) {
+            const nueva = document.getElementById('nueva_contrasena').value;
+            const confirmar = document.getElementById('confirmar_contrasena').value;
+            
+            // 1. Validar Longitud (Mínimo 8)
+            if (nueva.length < 8) {
+                e.preventDefault();
+                mensajeSistema(2, "La nueva contraseña es muy corta. Debe tener al menos 8 caracteres.");
+                return;
+            }
+
+            // 2. Validar Coincidencia
+            if (nueva !== confirmar) {
+                e.preventDefault();
+                mensajeSistema(2, "Las contraseñas no coinciden. Por favor, verifíquelas."); 
+                return;
+            }
+
+            e.preventDefault();
+            mensajeSistema(3, "¿Confirmar cambio de contraseña?", () => this.submit());
+        });
+    </script>
+}
+}

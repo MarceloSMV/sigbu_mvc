@@ -1,0 +1,206 @@
+﻿@model sigbu_mvc.ViewModels.ReportesViewModel
+@{
+    ViewData["Title"] = "Centro de Reportes";
+}
+
+<div class="container mt-4">
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body d-flex align-items-center p-4" style="background-color: #fcc2d7; border-radius: 10px;">
+            <div class="me-3 bg-white p-3 rounded-circle shadow-sm text-dark">
+                <i class="bi bi-bar-chart-line-fill fs-1"></i>
+            </div>
+            <div>
+                <h2 class="mb-0 text-dark fw-bold">Reportes y Consultas</h2>
+                <p class="text-dark mb-0 opacity-75">Historial de operaciones e inventario actual</p>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link @(Model.TabActual == "Areas" ? "active fw-bold" : "text-secondary")"
+               asp-action="Index" asp-route-filtro="Areas"><i class="bi bi-building"></i> Áreas</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(Model.TabActual == "Bienes" ? "active fw-bold" : "text-secondary")"
+               asp-action="Index" asp-route-filtro="Bienes"><i class="bi bi-box-seam"></i> Bienes</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(Model.TabActual == "Transferencias" ? "active fw-bold" : "text-secondary")"
+               asp-action="Index" asp-route-filtro="Transferencias"><i class="bi bi-arrow-left-right"></i> Transferencias</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(Model.TabActual == "Inventario" ? "active fw-bold bg-light text-primary" : "text-secondary")"
+               asp-action="Index" asp-route-filtro="Inventario"><i class="bi bi-clipboard-data"></i> Inventario Actual</a>
+        </li>
+    </ul>
+
+    @if (Model.TabActual == "Inventario")
+    {
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom-0 pt-4">
+                <h5 class="fw-bold"><i class="bi bi-funnel"></i> Filtrar Inventario</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" asp-action="Index" id="formInventario">
+                    <input type="hidden" name="filtro" value="Inventario" />
+
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">Código</label>
+                            <input type="text" name="codigo" class="form-control" value="@Model.FiltroCodigo" placeholder="Ej. BN-001">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">Serie</label>
+                            <input type="text" name="serie" class="form-control" value="@Model.FiltroSerie" placeholder="Ej. SN123...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">Área</label>
+                            <select name="areaId" class="form-select" asp-items="Model.ListaAreas">
+                                <option value="">-- Todas las áreas --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i> Buscar</button>
+                            <button type="button" class="btn btn-success" onclick="confirmarExcel()">
+                                <i class="bi bi-file-excel"></i> Exportar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Código</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th>Ubicación / Área</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Inventario.Any())
+                            {
+                                <tr><td colspan="4" class="text-center py-5 text-muted">No se encontraron bienes.</td></tr>
+                            }
+                            else
+                            {
+                                foreach (var item in Model.Inventario)
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-bold text-primary">@(item.codigo ?? "S/C")</td>
+                                        <td>
+                                            <div class="fw-bold">@item.descripcion</div>
+                                            <small class="text-muted">Serie: @(item.serie ?? "-")</small>
+                                        </td>
+                                        <td><span class="badge bg-secondary">@item.estado</span></td>
+                                        <td>
+                                            <i class="bi bi-geo-alt text-danger"></i> @(item.Area?.nombre ?? "Sin asignar")
+                                            <div class="small text-muted ps-3">@item.ubicacion</div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    // VISTA HISTORIAL
+    else
+    {
+        <div class="d-flex justify-content-center mb-4">
+            <div class="btn-group shadow-sm" role="group">
+                <a asp-action="Index" asp-route-filtro="@Model.TabActual" asp-route-estado="Todo"
+                   class="btn @(Model.EstadoFiltro == "Todo" ? "btn-primary" : "btn-outline-primary")">Todo</a>
+
+                <a asp-action="Index" asp-route-filtro="@Model.TabActual" asp-route-estado="Aprobado"
+                   class="btn @(Model.EstadoFiltro == "Aprobado" ? "btn-success text-white" : "btn-outline-success")">
+                    <i class="bi bi-check-circle"></i> Aprobado
+                </a>
+
+                <a asp-action="Index" asp-route-filtro="@Model.TabActual" asp-route-estado="Rechazado"
+                   class="btn @(Model.EstadoFiltro == "Rechazado" ? "btn-danger text-white" : "btn-outline-danger")">
+                    <i class="bi bi-x-circle"></i> Rechazado
+                </a>
+
+                <a asp-action="Index" asp-route-filtro="@Model.TabActual" asp-route-estado="Pendiente"
+                   class="btn @(Model.EstadoFiltro == "Pendiente" ? "btn-warning text-dark" : "btn-outline-warning")">
+                    <i class="bi bi-clock"></i> Pendiente
+                </a>
+            </div>
+        </div>
+
+        if (!Model.Solicitudes.Any())
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-inbox fs-1 text-muted opacity-50"></i>
+                <p class="mt-3 text-muted">
+                    No hay solicitudes en <strong>@Model.TabActual</strong> con estado <strong>@Model.EstadoFiltro</strong>.
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="row">
+                @foreach (var sol in Model.Solicitudes)
+                {
+                    string estadoClass = "secondary";
+                    if (sol.estado.ToLower() == "aprobado") { estadoClass = "success"; }
+                    else if (sol.estado.ToLower() == "rechazado") { estadoClass = "danger"; }
+                    else if (sol.estado.ToLower() == "pendiente") { estadoClass = "warning"; }
+
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 shadow-sm border-@estadoClass border-top-0 border-end-0 border-bottom-0 border-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span class="badge bg-light text-dark border">#@sol.id</span>
+                                    <span class="badge bg-@estadoClass text-white shadow-sm">@sol.estado.ToUpper()</span>
+                                </div>
+
+                                <h5 class="card-title text-dark">@sol.tipo @sol.categoria</h5>
+                                <h6 class="card-subtitle mb-2 text-muted small">
+                                    <i class="bi bi-calendar"></i> @sol.fecha_creacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                </h6>
+                                <p class="card-text text-secondary small">
+                                    Solicitante: @(sol.Usuario?.nombres ?? "") @(sol.Usuario?.ap_paterno ?? "")
+                                </p>
+
+                                <hr class="my-2 border-light">
+                                <div class="d-grid">
+                                    <a asp-action="PrevisualizarPdf" asp-route-id="@sol.id" target="_blank" class="btn btn-outline-dark btn-sm">
+                                        <i class="bi bi-file-pdf"></i> Ver Reporte PDF
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+
+</div>
+<div class="text-center mt-5">
+    <a asp-controller="Login" asp-action="Login" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Panel Principal
+    </a>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmarExcel() {
+            mensajeSistema(3, "¿Desea generar el reporte Excel?", function() {
+                var form = document.getElementById('formInventario');
+                var params = new URLSearchParams(new FormData(form)).toString();
+                window.location.href = '@Url.Action("ExportarExcel")?' + params;
+            });
+        }
+    </script>
+}

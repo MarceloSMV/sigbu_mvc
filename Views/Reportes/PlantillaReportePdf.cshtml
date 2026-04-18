@@ -1,0 +1,178 @@
+﻿@model sigbu_mvc.Models.Solicitud
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reporte_@Model.id</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            font-size: 12px; /* Reducimos la fuente general */
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+
+        .watermark {
+            position: fixed;
+            top: 40%;
+            left: 25%;
+            font-size: 80px; /* Ajustamos marca de agua */
+            color: rgba(0,0,0,0.05);
+            transform: rotate(-45deg);
+            z-index: -1;
+        }
+
+        /* Estilos compactos para la tabla */
+        .table-compact {
+            font-size: 10px; /* Letra pequeña para la tabla */
+        }
+
+            .table-compact th, .table-compact td {
+                padding: 4px 6px; /* Menos relleno para que quepan más columnas */
+                vertical-align: middle;
+            }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="watermark">@Model.estado.ToUpper()</div>
+
+    <div class="header">
+        <h3 class="fw-bold">SIGBU - Reporte de Solicitud #@Model.id</h3>
+        <p class="mb-0">Fecha de Emisión: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+    </div>
+
+    <div class="row mb-3 p-3 bg-light border rounded mx-0">
+        <div class="col-6">
+            <h6 class="fw-bold text-primary mb-1">Datos Generales</h6>
+            <strong>Solicitante:</strong> @Model.Usuario?.nombres @Model.Usuario?.ap_paterno<br>
+            <strong>Operación:</strong> @Model.tipo.ToUpper() @Model.categoria.ToUpper()<br>
+        </div>
+        <div class="col-6 text-end">
+            <h6 class="fw-bold text-primary mb-1">Estado</h6>
+            <strong>Estado Actual:</strong> <span class="badge bg-dark">@Model.estado.ToUpper()</span><br>
+            <strong>Fecha Solicitud:</strong> @Model.fecha_creacion.ToLocalTime()
+        </div>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-secondary text-white py-1">
+            <small class="fw-bold">Sustento / Observaciones</small>
+        </div>
+        <div class="card-body py-2">
+            @if (string.IsNullOrEmpty(Model.sustento))
+            {
+                <em class="text-muted">Sin sustento registrado.</em>
+            }
+            else
+            {
+                <span class="fst-italic">"@Model.sustento"</span>
+            }
+        </div>
+    </div>
+
+    <h5 class="fw-bold mb-3 border-bottom pb-2">Detalle de Items</h5>
+
+    <table class="table table-bordered table-striped table-compact mt-2">
+        <thead class="table-dark text-center">
+            @if (Model.categoria.ToLower() == "areas")
+            {
+                <tr>
+                    <th>Nombre</th>
+                    <th>Responsable</th>
+                    <th>Ubicación</th>
+                    <th>Descripción</th>
+                </tr>
+            }
+            else if (Model.categoria.ToLower() == "transferencias")
+            {
+                <tr>
+                    <th>Bien</th>
+                    <th>Código</th>
+                    <th>Serie</th>
+                    <th>Color</th>
+                    <th>Estado Bien</th>
+                    <th class="bg-primary bg-opacity-50">Origen</th>
+                    <th class="bg-success bg-opacity-50">Destino</th>
+                </tr>
+            }
+            else /* Bienes (Agregar, Editar, Eliminar) */
+            {
+                <tr>
+                    <th>Código</th>
+                    <th>Serie</th>
+                    <th>Descripción</th>
+                    <th>Color</th>
+                    <th>Estado</th>
+                    <th>Ubicación</th>
+                    <th>Área Asignada</th>
+                </tr>
+            }
+        </thead>
+        <tbody>
+            @if (Model.categoria.ToLower() == "areas")
+            {
+                foreach (var d in Model.area_detalles)
+                {
+                    <tr>
+                        <td class="fw-bold">@d.nombre</td>
+                        <td>@d.responsable</td>
+                        <td>@d.ubicacion</td>
+                        <td>@d.descripcion</td>
+                    </tr>
+                }
+            }
+            else if (Model.categoria.ToLower() == "transferencias")
+            {
+                foreach (var d in Model.transferencia_detalles)
+                {
+                    <tr>
+                        <td class="fw-bold">@d.Bien?.descripcion</td>
+                        <td>@(d.Bien?.codigo ?? "-")</td>
+                        <td>@(d.Bien?.serie ?? "-")</td>
+                        <td>@(d.Bien?.color ?? "-")</td>
+                        <td><span class="badge bg-light text-dark border">@d.Bien?.estado</span></td>
+                        <td>@d.AreaOrigen?.nombre</td>
+                        <td class="fw-bold text-success">@d.AreaDestino?.nombre</td>
+                    </tr>
+                }
+            }
+            else /* Bienes */
+            {
+                foreach (var d in Model.bien_detalles)
+                {
+                    <tr>
+                        <td class="fw-bold">@(d.codigo ?? "S/C")</td>
+                        <td>@(d.serie ?? "S/N")</td>
+                        <td>@d.descripcion</td>
+                        <td>@(d.color ?? "-")</td>
+                        <td>@d.estado</td>
+                        <td>@d.ubicacion</td>
+                        <td>@(d.area?.nombre ?? "ID: " + d.area_id)</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    <div class="row mt-5 pt-5">
+        <div class="col-6 text-center">
+            <p class="border-top border-dark d-inline-block px-5 pt-2">Firma del Solicitante</p>
+        </div>
+        <div class="col-6 text-center">
+            <p class="border-top border-dark d-inline-block px-5 pt-2">Firma del Responsable / Jefe</p>
+        </div>
+    </div>
+
+</body>
+</html>

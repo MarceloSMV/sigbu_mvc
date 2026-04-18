@@ -1,0 +1,269 @@
+﻿@model IEnumerable<sigbu_mvc.Models.Solicitud>
+
+@{
+    ViewData["Title"] = "Bandeja de Solicitudes";
+    string filtroActual = ViewBag.FiltroActual as string ?? "Todos";
+}
+
+<div class="container mt-4">
+
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body d-flex align-items-center p-4" style="background-color: #fff9db; border-radius: 10px;">
+            <div class="me-3 bg-white p-3 rounded-circle shadow-sm text-warning">
+                <i class="bi bi-hourglass-split fs-1"></i>
+            </div>
+            <div>
+                <h2 class="mb-0 text-dark fw-bold">Solicitudes</h2>
+                <p class="text-muted mb-0">Gestión y aprobación de requerimientos pendientes</p>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-pills mb-4 gap-2">
+        <li class="nav-item">
+            <a class="nav-link @(filtroActual == "Todos" ? "active bg-warning text-dark fw-bold" : "text-secondary border")"
+               asp-action="Index" asp-route-filtro="Todos">
+                <i class="bi bi-collection"></i> Todo
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(filtroActual == "Area" ? "active bg-warning text-dark fw-bold" : "text-secondary border")"
+               asp-action="Index" asp-route-filtro="Area">
+                <i class="bi bi-building"></i> Áreas
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(filtroActual == "Bienes" ? "active bg-warning text-dark fw-bold" : "text-secondary border")"
+               asp-action="Index" asp-route-filtro="Bienes">
+                <i class="bi bi-box-seam"></i> Bienes
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(filtroActual == "Transferencias" ? "active bg-info text-dark fw-bold" : "text-secondary border")"
+               asp-action="Index" asp-route-filtro="Transferencias">
+                <i class="bi bi-arrow-left-right"></i> Transferencias
+            </a>
+        </li>
+    </ul>
+
+    @if (TempData["Mensaje"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["Mensaje"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                <h5 class="text-muted">No hay solicitudes pendientes.</h5>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var solicitud in Model)
+            {
+                string cat = solicitud.categoria.ToLower();
+                string tipo = solicitud.tipo;
+
+                string cardBorderColor = "border-secondary";
+                string headerBgColor = "bg-secondary";
+                string headerTextColor = "text-white";
+                string badgeColor = "bg-dark";
+
+                if (tipo == "Agregar")
+                {
+                    cardBorderColor = "border-success";
+                    headerBgColor = "bg-success bg-opacity-25";
+                    headerTextColor = "text-success";
+                    badgeColor = "bg-success";
+                }
+                else if (tipo == "Eliminar")
+                {
+                    cardBorderColor = "border-danger";
+                    headerBgColor = "bg-danger bg-opacity-25";
+                    headerTextColor = "text-danger";
+                    badgeColor = "bg-danger";
+                }
+                else if (tipo == "Editar")
+                {
+                    cardBorderColor = "border-warning";
+                    headerBgColor = "bg-warning bg-opacity-25";
+                    headerTextColor = "text-dark";
+                    badgeColor = "bg-warning text-dark";
+                }
+                else if (tipo == "Transferir")
+                {
+                    cardBorderColor = "border-info";
+                    headerBgColor = "bg-info bg-opacity-25";
+                    headerTextColor = "text-dark";
+                    badgeColor = "bg-info text-dark";
+                }
+
+                <div class="col-md-4 mb-4">
+                    <div class="card @cardBorderColor h-100 shadow-sm">
+                        <div class="card-header @headerBgColor @headerTextColor d-flex justify-content-between align-items-center border-bottom-0">
+                            <div class="d-flex align-items-center gap-2">
+                                @if (cat == "transferencias")
+                                {
+                                    <i class="bi bi-arrow-left-right fs-5"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi @(cat == "bienes" ? "bi-box-seam" : "bi-building") fs-5"></i>
+                                }
+                                <span class="fw-bold">@cat.ToUpper()</span>
+                                <span class="badge @badgeColor">@tipo</span>
+                            </div>
+                            <small class="fw-bold opacity-75">@solicitud.fecha_creacion.ToLocalTime().ToString("dd/MM HH:mm")</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3 p-2 bg-light rounded border d-flex align-items-center gap-2">
+                                <i class="bi bi-person-circle text-secondary fs-4"></i>
+                                <div>
+                                    <small class="text-muted d-block lh-1">Solicitante</small>
+                                    <strong>@(solicitud.Usuario?.nombres ?? "Desc") @(solicitud.Usuario?.ap_paterno ?? "")</strong>
+                                </div>
+                            </div>
+
+                            <h6 class="card-subtitle mb-2 text-muted border-bottom pb-2">Detalle:</h6>
+
+                            @if (cat == "areas" && solicitud.area_detalles != null && solicitud.area_detalles.Any())
+                            {
+                                var detalle = solicitud.area_detalles.First();
+                                <ul class="list-unstyled small mb-0">
+                                    <li><strong>Nombre:</strong> @detalle.nombre</li>
+                                    <li><strong>Resp:</strong> @detalle.responsable</li>
+                                </ul>
+                            }
+                            else if (cat == "bienes" && solicitud.bien_detalles != null && solicitud.bien_detalles.Any())
+                            {
+                                var detalle = solicitud.bien_detalles.First();
+                                <ul class="list-unstyled small mb-0">
+                                    <li><strong>Bien:</strong> @detalle.descripcion</li>
+                                    <li><strong>Código:</strong> @(detalle.codigo ?? "S/C")</li>
+                                </ul>
+                            }
+                            else if (cat == "transferencias" && solicitud.transferencia_detalles != null && solicitud.transferencia_detalles.Any())
+                            {
+                                var detalle = solicitud.transferencia_detalles.First();
+                                <ul class="list-unstyled small mb-0">
+                                    <li><strong>Origen:</strong> @(detalle.AreaOrigen?.nombre ?? "-")</li>
+                                    <li><strong>Destino:</strong> <span class="fw-bold text-primary">@(detalle.AreaDestino?.nombre ?? "-")</span></li>
+                                    <li class="mt-1"><strong>Bien:</strong> @(detalle.Bien?.descripcion ?? "Item")</li>
+                                </ul>
+                            }
+                        </div>
+                        <div class="card-footer bg-transparent border-0 pt-3">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#modalDetalle-@solicitud.id">
+                                    <i class="bi bi-eye"></i> Ver Detalle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="modalDetalle-@solicitud.id" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header @headerBgColor @headerTextColor">
+                                <h5 class="modal-title">Solicitud #@solicitud.id - @cat.ToUpper()</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-light border border-secondary rounded-3 shadow-sm mb-3">
+                                    <h6 class="fw-bold text-dark mb-2">Sustento:</h6>
+                                    <p class="mb-0 fst-italic text-secondary">
+                                        "@(string.IsNullOrEmpty(solicitud.sustento) ? "Sin sustento." : solicitud.sustento)"
+                                    </p>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered align-middle">
+                                        <thead class="table-light">
+                                            @if (cat == "areas")
+                                            {
+                                                <tr><th>Nombre</th><th>Responsable</th><th>Ubicación</th></tr>
+                                            }
+                                            else if (cat == "transferencias")
+                                            {
+                                                <tr><th>Bien</th><th>Código</th><th>Origen</th><th>Destino</th></tr>
+                                            }
+                                            else
+                                            {
+                                                <tr><th>Código</th><th>Descripción</th><th>Serie</th><th>Estado</th></tr>
+                                            }
+                                        </thead>
+                                        <tbody>
+                                            @if (cat == "areas" && solicitud.area_detalles != null)
+                                            {
+                                                foreach (var item in solicitud.area_detalles)
+                                                {
+                                                    <tr><td>@item.nombre</td><td>@item.responsable</td><td>@item.ubicacion</td></tr>
+                                                }
+                                            }
+                                            else if (cat == "transferencias" && solicitud.transferencia_detalles != null)
+                                            {
+                                                foreach (var item in solicitud.transferencia_detalles)
+                                                {
+                                                    <tr>
+                                                        <td>@(item.Bien?.descripcion ?? "-")</td>
+                                                        <td class="text-primary fw-bold">@(item.Bien?.codigo ?? "-")</td>
+                                                        <td>@(item.AreaOrigen?.nombre ?? "-")</td>
+                                                        <td class="table-success">@(item.AreaDestino?.nombre ?? "-")</td>
+                                                    </tr>
+                                                }
+                                            }
+                                            else if (cat == "bienes" && solicitud.bien_detalles != null)
+                                            {
+                                                foreach (var item in solicitud.bien_detalles)
+                                                {
+                                                    <tr>
+                                                        <td>@(item.codigo ?? "-")</td>
+                                                        <td>@item.descripcion</td>
+                                                        <td>@(item.serie ?? "-")</td>
+                                                        <td>@item.estado</td>
+                                                    </tr>
+                                                }
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+
+                                <form asp-action="Rechazar" method="post" class="d-inline" id="form-rechazar-@solicitud.id">
+                                    <input type="hidden" name="id" value="@solicitud.id" />
+                                    <button type="button" class="btn btn-danger"
+                                            onclick="mensajeSistema(4, '¿Está seguro de rechazar esta solicitud?', () => document.getElementById('form-rechazar-@solicitud.id').submit())">
+                                        <i class="bi bi-x-circle"></i> Rechazar
+                                    </button>
+                                </form>
+
+                                <form asp-action="Aprobar" method="post" class="d-inline" id="form-aprobar-@solicitud.id">
+                                    <input type="hidden" name="id" value="@solicitud.id" />
+                                    <button type="button" class="btn btn-success fw-bold"
+                                            onclick="mensajeSistema(3, '¿Confirma la aprobación de esta solicitud?', () => document.getElementById('form-aprobar-@solicitud.id').submit())">
+                                        <i class="bi bi-check-circle"></i> Aprobar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+<div class="text-center mt-5">
+    <a asp-controller="Login" asp-action="Login" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Panel Principal
+    </a>
+</div>

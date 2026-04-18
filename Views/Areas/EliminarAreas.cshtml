@@ -1,0 +1,236 @@
+﻿@model List<sigbu_mvc.ViewModels.AreaSolicitudViewModel>
+@{
+    ViewData["Title"] = "Eliminar Áreas";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm border-danger mb-4">
+        <div class="card-header bg-danger text-white"><h5 class="mb-0">Buscar Área para Eliminar</h5></div>
+        <div class="card-body">
+            <label class="form-label fw-bold">Buscar por nombre:</label>
+            <div class="input-group mb-2">
+                <input type="text" id="search-term" class="form-control" placeholder="Escriba el nombre del área..." autocomplete="off">
+            </div>
+            <div id="list-resultados" class="list-group position-absolute shadow w-100" style="z-index:1000; display:none;"></div>
+
+            <div id="area-info" style="display:none;" class="border rounded p-3 bg-light border-danger mt-3">
+                <h6 class="text-danger border-bottom pb-2 mb-3">Verifique los detalles antes de agregar</h6>
+
+                <input type="hidden" id="temp-id" />
+                <input type="hidden" id="temp-nombre" />
+                <input type="hidden" id="temp-responsable" />
+                <input type="hidden" id="temp-ubicacion" />
+                <input type="hidden" id="temp-descripcion" />
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="small fw-bold text-muted">Nombre</label>
+                        <input type="text" id="display-nombre" class="form-control form-control-sm" readonly />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small fw-bold text-muted">Responsable</label>
+                        <input type="text" id="display-responsable" class="form-control form-control-sm" readonly />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="small fw-bold text-muted">Ubicación</label>
+                        <input type="text" id="display-ubicacion" class="form-control form-control-sm" readonly />
+                    </div>
+                    <div class="col-12">
+                        <label class="small fw-bold text-muted">Descripción</label>
+                        <input type="text" id="display-descripcion" class="form-control form-control-sm" readonly />
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="button" class="btn btn-danger" id="btn-agregar-cola">
+                            <i class="bi bi-arrow-down"></i> Agregar a la lista
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-danger">Áreas a Eliminar</h5>
+            <small id="contador-items" class="text-muted fw-bold">0 ítems</small>
+        </div>
+        <div class="card-body">
+            <form asp-action="Eliminar" method="post" id="form-eliminar-areas">
+                <div class="card mb-4 bg-light border-secondary">
+                    <div class="card-body">
+                        <label class="fw-bold text-danger">Sustento:</label>
+                        <textarea class="form-control" id="sustento" name="sustento" rows="2" placeholder="Motivo ..."></textarea>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Responsable</th>
+                                <th>Ubicación</th>
+                                <th>Descripción</th>
+                                <th style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cola"></tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                    <button type="button" class="btn btn-danger fw-bold" id="btn-enviar" disabled>Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const inputSearch = document.getElementById('search-term');
+        const listResultados = document.getElementById('list-resultados');
+        const areaInfo = document.getElementById('area-info');
+        const tablaCola = document.getElementById('tabla-cola');
+        const btnAgregar = document.getElementById('btn-agregar-cola');
+        const btnEnviar = document.getElementById('btn-enviar');
+        let contador = 0;
+
+        // LÓGICA: BUSCADOR
+        inputSearch.addEventListener('input', async function() {
+            const term = this.value;
+            if(term.length < 1) { listResultados.style.display='none'; return; }
+
+            const res = await fetch(`@Url.Action("BuscarAreas")?term=${term}`);
+            const data = await res.json();
+
+            listResultados.innerHTML = '';
+            if(data.length > 0){
+                listResultados.style.display = 'block';
+                data.forEach(item => {
+                    const a = document.createElement('a');
+                    a.className = 'list-group-item list-group-item-action';
+                    a.innerText = item.nombre;
+                    a.onclick = () => {
+                        areaInfo.style.display='block';
+
+                        // Llenar datos ocultos y visibles
+                        document.getElementById('temp-id').value = item.id;
+                        document.getElementById('temp-nombre').value = item.nombre;
+                        document.getElementById('display-nombre').value = item.nombre;
+
+                        // Manejo de nulos con operador || '-'
+                        const resp = item.responsable || '-';
+                        const ubic = item.ubicacion || '-';
+                        const desc = item.descripcion || '-';
+
+                        document.getElementById('temp-responsable').value = resp;
+                        document.getElementById('display-responsable').value = resp;
+
+                        document.getElementById('temp-ubicacion').value = ubic;
+                        document.getElementById('display-ubicacion').value = ubic;
+
+                        document.getElementById('temp-descripcion').value = desc;
+                        document.getElementById('display-descripcion').value = desc;
+
+                        listResultados.style.display='none';
+                        inputSearch.value='';
+                    };
+                    listResultados.appendChild(a);
+                });
+            } else {
+                listResultados.style.display = 'none';
+            }
+        });
+
+        // LÓGICA: AGREGAR A LA TABLA
+        btnAgregar.addEventListener('click', function() {
+            const id = document.getElementById('temp-id').value;
+            const existingIds = Array.from(tablaCola.querySelectorAll('input[name$=".area_id"]')).map(i => i.value);
+
+            if (existingIds.includes(id)) {
+                mensajeSistema(2, "Esta área ya está en la lista para eliminar.");
+                return;
+            }
+
+            const nombre = document.getElementById('temp-nombre').value;
+            const resp = document.getElementById('temp-responsable').value;
+            const ubic = document.getElementById('temp-ubicacion').value;
+            const desc = document.getElementById('temp-descripcion').value;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <input type="hidden" name="[${contador}].area_id" value="${id}" />
+                <input type="hidden" name="[${contador}].nombre" value="${nombre}" />
+                <input type="hidden" name="[${contador}].responsable" value="${resp}" />
+                <input type="hidden" name="[${contador}].ubicacion" value="${ubic}" />
+                <input type="hidden" name="[${contador}].descripcion" value="${desc}" />
+
+                <td>${nombre}</td>
+                <td>${resp}</td>
+                <td>${ubic}</td>
+                <td><small class="text-muted">${desc}</small></td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm btn-borrar">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            tablaCola.appendChild(tr);
+            areaInfo.style.display = 'none';
+
+            reindexarFilasCola();
+            actualizarContador();
+        });
+
+        // LÓGICA: ELIMINAR FILA
+        tablaCola.addEventListener('click', (e) => {
+            if(e.target.closest('.btn-borrar')) {
+                e.target.closest('tr').remove();
+                reindexarFilasCola();
+                actualizarContador();
+            }
+        });
+
+        // LÓGICA: ENVIAR FORMULARIO
+        btnEnviar.addEventListener('click', function() {
+            if (contador === 0) {
+                mensajeSistema(2, "La lista de áreas a eliminar está vacía.");
+                return;
+            }
+
+            var txtSustento = document.getElementById("sustento").value.trim();
+            if (txtSustento === "") {
+                mensajeSistema(2, "El sustento es obligatorio. Indique el motivo.");
+                return;
+            }
+
+            mensajeSistema(4, "¿Confirma el envío de esta solicitud de ELIMINACIÓN de áreas?", function() {
+                document.getElementById('form-eliminar-areas').submit();
+            });
+        });
+
+        function reindexarFilasCola() {
+             const filas = tablaCola.querySelectorAll('tr');
+             filas.forEach((fila, index) => {
+                 fila.querySelectorAll('input').forEach(input => {
+                     if(input.name) input.name = input.name.replace(/\[\d+\]/, `[${index}]`);
+                 });
+             });
+             contador = filas.length;
+        }
+
+        function actualizarContador() {
+             const total = tablaCola.children.length;
+             // Ahora este elemento SI existe, por lo que no dará error
+             const contadorEl = document.getElementById('contador-items');
+             if(contadorEl) contadorEl.innerText = `${total} ítems`;
+
+             btnEnviar.disabled = total === 0;
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.input-group')) listResultados.style.display = 'none';
+        });
+    </script>
+}

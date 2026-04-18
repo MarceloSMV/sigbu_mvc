@@ -1,0 +1,165 @@
+﻿@using System.Security.Claims
+@{
+    ViewData["Title"] = "Ingresar Código";
+}
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow" style="width: 100%; max-width: 450px; border-radius: 10px;">
+        <div class="card-header text-center bg-primary text-white" style="border-top-left-radius: 10px; border-top-right-radius: 10px;">
+            <h4 class="mb-0 fw-bold">Ingresar Código de Verificación</h4>
+        </div>
+        <div class="card-body p-4 text-center">
+
+            @if (TempData["Mensaje"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["Mensaje"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                TempData.Remove("Mensaje");
+            }
+
+            @if (TempData["MensajeError"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-x-circle-fill me-2"></i> @TempData["MensajeError"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                TempData.Remove("MensajeError");
+            }
+
+            <p class="text-muted">
+                Ingresa el código de 6 dígitos proporcionado al correo electrónico brindado.
+            </p>
+
+            <form asp-controller="RecuperarContrasena" asp-action="IngresarCodigo" method="post" id="form-codigo">
+                <div class="d-flex justify-content-center gap-2 mb-4" id="codigo-inputs">
+                    @for (int i = 1; i <= 6; i++)
+                    {
+                        <input type="text"
+                               id="codigo@(i)"
+                               name="codigo@(i)"
+                               class="form-control text-center fw-bold fs-5"
+                               maxlength="1"
+                               style="width: 50px;"
+                               required
+                               onkeyup="moverFoco(this, event, @i, @(i < 6 ? i + 1 : 0))" />
+                    }
+                </div>
+
+                <div class="mb-4">
+                    <button type="button" class="btn btn-link btn-sm text-secondary" id="btn-reenviar">
+                        Reenviar Código (<span id="contador">30</span> seg)
+                    </button>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-success fw-bold">Aceptar</button>
+                    <br />
+                    <a asp-controller="Login" asp-action="Login" class="btn btn-secondary flex-grow-1">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const btnReenviar = document.getElementById('btn-reenviar');
+        let countdown = 30;
+        let timer;
+
+        // --- 1. FUNCIÓN MODAL ---
+        function mostrarModalSistema(mensaje) {
+            var modalElement = document.getElementById('modalSistema');
+            var myModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+            var icono = document.getElementById('msjIcono');
+            var texto = document.getElementById('msjTexto');
+            var btnCancelar = document.getElementById('btnCancelar');
+            var btnAceptar = document.getElementById('btnAceptar');
+
+            texto.innerText = mensaje;
+            icono.className = "bi bi-check-circle-fill text-success display-3";
+            btnCancelar.style.display = 'none';
+
+            btnAceptar.onclick = function() { myModal.hide(); };
+            myModal.show();
+        }
+
+        // --- 2. LÓGICA DE INPUTS ---
+        function moverFoco(currentInput, event, currentNum, nextNum) {
+            if (event.keyCode === 8 || event.keyCode === 46) return;
+            if (currentInput.value.length === 1 && nextNum > 0) {
+                document.getElementById('codigo' + nextNum).focus();
+            }
+        }
+
+        // --- 3. CONTADOR CORREGIDO (RECONSTRUYE EL HTML) ---
+        function iniciarContador() {
+            // 1. Reseteamos variables
+            countdown = 30;
+            btnReenviar.disabled = true;
+
+            // 2. IMPORTANTE: Restauramos el HTML del botón inmediatamente
+            // Esto hace que aparezca el "30" y el span al instante, borrando el "Procesando..."
+            btnReenviar.innerHTML = `Reenviar Código (<span id="contador">${countdown}</span> seg)`;
+
+            // 3. Limpiamos cualquier intervalo anterior
+            if(timer) clearInterval(timer);
+
+            // 4. Iniciamos la cuenta regresiva
+            timer = setInterval(() => {
+                countdown--;
+
+                // Actualizamos el botón completo
+                btnReenviar.innerHTML = `Reenviar Código (<span id="contador">${countdown}</span> seg)`;
+
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    btnReenviar.disabled = false;
+                    btnReenviar.innerHTML = 'Reenviar Código';
+                }
+            }, 1000);
+        }
+
+        // --- 4. AJAX ---
+        btnReenviar.addEventListener('click', async function() {
+            // Cambiamos texto temporalmente
+            btnReenviar.disabled = true;
+            btnReenviar.innerText = "Procesando...";
+
+            try {
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                const token = tokenInput ? tokenInput.value : '';
+
+                const response = await fetch('@Url.Action("ReenviarCodigoAjax", "RecuperarContrasena")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    mostrarModalSistema(data.mensaje);
+                    // AQUÍ LLAMAMOS A LA FUNCIÓN CORREGIDA
+                    iniciarContador();
+                } else {
+                    mostrarModalSistema("Si su cuenta existe, se le envio un codigo de verificacion.");
+                    btnReenviar.disabled = false;
+                    btnReenviar.innerText = "Reenviar Código";
+                }
+
+            } catch (error) {
+                console.error(error);
+                mostrarModalSistema("Si su cuenta existe, se le envio un codigo de verificacion.");
+                btnReenviar.disabled = false;
+                btnReenviar.innerText = "Reenviar Código";
+            }
+        });
+
+        window.onload = iniciarContador;
+    </script>
+}

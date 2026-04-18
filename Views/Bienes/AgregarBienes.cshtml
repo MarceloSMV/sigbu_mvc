@@ -1,0 +1,207 @@
+﻿@model List<sigbu_mvc.ViewModels.BienSolicitudViewModel>
+@{
+    ViewData["Title"] = "Agregar Bienes";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm border-success mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Registrar Nuevo Bien</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Código</label>
+                    <input type="text" id="temp-codigo" class="form-control" placeholder="Ej: 000000" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Serie</label>
+                    <input type="text" id="temp-serie" class="form-control" placeholder="000000" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Descripción (*)</label>
+                    <input type="text" id="temp-descripcion" class="form-control" placeholder="Ej: Monitor 24 pulgadas..." />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Color</label>
+                    <input type="text" id="temp-color" class="form-control" placeholder="Ej: Negro" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Ubicación</label>
+                    <input type="text" id="temp-ubicacion" class="form-control" placeholder="Ej: C2-2A" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Área (*)</label>
+                    <select id="temp-area" class="form-select" asp-items="ViewBag.Areas">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Estado (*)</label>
+                    <select id="temp-estado" class="form-select" asp-items="ViewBag.Estados"></select>
+                </div>
+
+                <div class="col-12 text-end mt-3">
+                    <button type="button" class="btn btn-success" id="btn-agregar-cola">
+                        <i class="bi bi-arrow-down"></i> Agregar a la lista
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow border-success">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Bienes a crear</h5>
+            <small id="contador-items">0 ítems</small>
+        </div>
+        <div class="card-body">
+            <form asp-action="Agregar" method="post" id="form-agregar-bienes">
+                <div class="card mb-4 bg-light border-secondary">
+                    <div class="card-body">
+                        <label for="sustento" class="form-label fw-bold text-dark">
+                            <i class="bi bi-file-text"></i> Sustento de Creación:
+                        </label>
+                        <textarea class="form-control" id="sustento" name="sustento" rows="2" placeholder="Motivo (Ej: Compra, Donación...)"></textarea>
+                        <div class="form-text">Justifique la creación de estos nuevos bienes.</div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Código</th>
+                                <th>Serie</th>
+                                <th>Descripción</th>
+                                <th>Color</th>
+                                <th>Ubicación</th>
+                                <th>Área</th>
+                                <th>Estado</th>
+                                <th style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cola"></tbody>
+                    </table>
+                </div>
+
+                <div class="text-end mt-3">
+                    <a asp-action="Index" class="btn btn-secondary me-2">Cancelar</a>
+                    <button type="button" class="btn btn-success fw-bold" id="btn-enviar" disabled>Enviar Solicitud</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const tablaCola = document.getElementById('tabla-cola');
+        const btnAgregar = document.getElementById('btn-agregar-cola');
+        const btnEnviar = document.getElementById('btn-enviar');
+        let contador = 0;
+
+        btnAgregar.addEventListener('click', async function() {
+            // Captura
+            const data = {
+                codigo: document.getElementById('temp-codigo').value.trim(),
+                serie: document.getElementById('temp-serie').value.trim(),
+                descripcion: document.getElementById('temp-descripcion').value.trim(),
+                color: document.getElementById('temp-color').value.trim(),
+                ubicacion: document.getElementById('temp-ubicacion').value.trim(),
+                area: document.getElementById('temp-area').value,
+                areaTexto: document.getElementById('temp-area').options[document.getElementById('temp-area').selectedIndex]?.text,
+                estado: document.getElementById('temp-estado').value
+            };
+
+            // Validaciones
+            if (!data.descripcion) { mensajeSistema(2, "La descripción es obligatoria."); return; }
+            if (!data.area) { mensajeSistema(2, "Debe seleccionar un Área."); return; }
+            if (!data.codigo && !data.serie) { mensajeSistema(2, "Debe ingresar al menos Código o Serie."); return; }
+
+            // Verificación Backend (Duplicados)
+            if (data.codigo || data.serie) {
+                try {
+                    const params = new URLSearchParams();
+                    if(data.codigo) params.append('codigo', data.codigo);
+                    if(data.serie) params.append('serie', data.serie);
+
+                    const res = await fetch(`@Url.Action("VerificarExistencia")?${params.toString()}`);
+                    const existe = await res.json();
+
+                    if (existe.codigo) { mensajeSistema(2, `El código '${data.codigo}' YA EXISTE en el sistema.`); return; }
+                    if (existe.serie) { mensajeSistema(2, `La serie '${data.serie}' YA EXISTE en el sistema.`); return; }
+                } catch (e) { mensajeSistema(2, "Error verificando duplicados."); return; }
+            }
+
+            // Validación Visual (Duplicados en lista actual)
+            const filas = Array.from(tablaCola.querySelectorAll('tr'));
+            let duplicado = false;
+            filas.forEach(f => {
+                const c = f.querySelector('input[name$=".codigo"]').value;
+                const s = f.querySelector('input[name$=".serie"]').value;
+                if ((data.codigo && c === data.codigo) || (data.serie && s === data.serie)) duplicado = true;
+            });
+            if(duplicado) { mensajeSistema(2, "Ya agregaste este código o serie a la lista actual."); return; }
+
+            // Agregar Fila
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <input type="hidden" name="[${contador}].codigo" value="${data.codigo}" />
+                <input type="hidden" name="[${contador}].serie" value="${data.serie}" />
+                <input type="hidden" name="[${contador}].descripcion" value="${data.descripcion}" />
+                <input type="hidden" name="[${contador}].color" value="${data.color}" />
+                <input type="hidden" name="[${contador}].ubicacion" value="${data.ubicacion}" />
+                <input type="hidden" name="[${contador}].area_id" value="${data.area}" />
+                <input type="hidden" name="[${contador}].estado" value="${data.estado}" />
+
+                <td>${data.codigo || '-'}</td>
+                <td>${data.serie || '-'}</td>
+                <td>${data.descripcion}</td>
+                <td>${data.color || '-'}</td>
+                <td>${data.ubicacion || '-'}</td>
+                <td>${data.areaTexto}</td>
+                <td>${data.estado}</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm btn-borrar"><i class="bi bi-trash"></i></button>
+                </td>
+            `;
+            tablaCola.appendChild(tr);
+
+            // Limpiar campos
+            document.getElementById('temp-codigo').value = "";
+            document.getElementById('temp-serie').value = "";
+            document.getElementById('temp-descripcion').value = "";
+            document.getElementById('temp-color').value = "";
+            document.getElementById('temp-ubicacion').value = "";
+
+            reindexarFilasCola();
+            actualizarContador();
+        });
+
+        tablaCola.addEventListener('click', (e) => {
+            if(e.target.closest('.btn-borrar')){ e.target.closest('tr').remove(); reindexarFilasCola(); actualizarContador(); }
+        });
+
+        btnEnviar.addEventListener('click', function() {
+            if (contador === 0) { mensajeSistema(2, "La lista está vacía."); return; }
+            if (document.getElementById("sustento").value.trim() === "") { mensajeSistema(2, "El sustento es obligatorio."); return; }
+            mensajeSistema(3, "¿Confirma el envío de esta solicitud de ALTA?", () => document.getElementById('form-agregar-bienes').submit());
+        });
+
+        function reindexarFilasCola() {
+             const filas = tablaCola.querySelectorAll('tr');
+             filas.forEach((fila, index) => {
+                 fila.querySelectorAll('input').forEach(input => {
+                     if(input.name) input.name = input.name.replace(/\[\d+\]/, `[${index}]`);
+                 });
+             });
+             contador = filas.length;
+        }
+        function actualizarContador() {
+            const total = tablaCola.children.length;
+            document.getElementById('contador-items').innerText = `${total} ítems`;
+            btnEnviar.disabled = total === 0;
+        }
+    </script>
+}

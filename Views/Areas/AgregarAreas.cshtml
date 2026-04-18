@@ -1,0 +1,189 @@
+﻿@model List<sigbu_mvc.ViewModels.AreaSolicitudViewModel>
+@{
+    ViewData["Title"] = "Agregar Áreas";
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow-sm border-success mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Registrar Nueva Área</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Nombre</label>
+                    <input type="text" id="temp-nombre" class="form-control" placeholder="Ej: Laboratorio de Redes..." />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Responsable</label>
+                    <input type="text" id="temp-responsable" class="form-control" placeholder="Nombre del encargado" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Ubicación</label>
+                    <input type="text" id="temp-ubicacion" class="form-control" placeholder="Edificio, Piso..." />
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold">Descripción</label>
+                    <input type="text" id="temp-descripcion" class="form-control" placeholder="Detalles adicionales..." />
+                </div>
+                <div class="col-12 text-end">
+                    <button type="button" class="btn btn-success" id="btn-agregar-cola">
+                        <i class="bi bi-arrow-down"></i> Agregar a la lista
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow border-success">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Áreas a crear</h5>
+            <small id="contador-items">0 ítems</small>
+        </div>
+        <div class="card-body">
+
+            <form asp-action="Agregar" method="post" id="form-agregar-areas">
+
+                <div class="card mb-4 bg-light border-secondary">
+                    <div class="card-body">
+                        <label for="sustento" class="form-label fw-bold text-dark">
+                            <i class="bi bi-file-text"></i> Sustento de Creación:
+                        </label>
+
+                        <textarea class="form-control" id="sustento" name="sustento" rows="2" placeholder="Motivo de la creación (Ej: Nueva facultad, desglose de oficinas...)"></textarea>
+
+                        <div class="form-text">Justifique la creación de estas nuevas unidades.</div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Responsable</th>
+                                <th>Ubicación</th>
+                                <th style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cola">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="text-end mt-3">
+                    <a asp-action="Index" class="btn btn-secondary me-2">Cancelar</a>
+
+                    <button type="button" class="btn btn-success fw-bold" id="btn-enviar" disabled>
+                        Enviar Solicitud
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const tablaCola = document.getElementById('tabla-cola');
+        const btnAgregar = document.getElementById('btn-agregar-cola');
+        const btnEnviar = document.getElementById('btn-enviar');
+        let contador = 0;
+
+        // LÓGICA: AGREGAR FILA
+        btnAgregar.addEventListener('click', function() {
+            const data = {
+                nombre: document.getElementById('temp-nombre').value,
+                responsable: document.getElementById('temp-responsable').value,
+                ubicacion: document.getElementById('temp-ubicacion').value,
+                descripcion: document.getElementById('temp-descripcion').value
+            };
+
+            if (!data.nombre) {
+                mensajeSistema(2, "El nombre del área es obligatorio.");
+                return;
+            }
+
+            // Validar duplicados visuales en la misma lista
+            const nombresExistentes = Array.from(tablaCola.querySelectorAll('input[name$=".nombre"]')).map(i => i.value.toLowerCase());
+            if (nombresExistentes.includes(data.nombre.toLowerCase())) {
+                mensajeSistema(2, "Ya ha agregado un área con ese nombre a la lista.");
+                return;
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <input type="hidden" name="[${contador}].nombre" value="${data.nombre}" />
+                <input type="hidden" name="[${contador}].responsable" value="${data.responsable}" />
+                <input type="hidden" name="[${contador}].ubicacion" value="${data.ubicacion}" />
+                <input type="hidden" name="[${contador}].descripcion" value="${data.descripcion}" />
+
+                <td>${data.nombre}</td>
+                <td>${data.responsable || '-'}</td>
+                <td>${data.ubicacion || '-'}</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm btn-borrar">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            tablaCola.appendChild(tr);
+
+            // Limpiar campos
+            document.getElementById('temp-nombre').value = "";
+            document.getElementById('temp-responsable').value = "";
+            document.getElementById('temp-ubicacion').value = "";
+            document.getElementById('temp-descripcion').value = "";
+
+            reindexarFilasCola();
+            actualizarContador();
+        });
+
+        // LÓGICA: ELIMINAR FILA
+        tablaCola.addEventListener('click', (e) => {
+            if(e.target.closest('.btn-borrar')){
+                e.target.closest('tr').remove();
+                reindexarFilasCola();
+                actualizarContador();
+            }
+        });
+
+        // LÓGICA: ENVIAR FORMULARIO
+        btnEnviar.addEventListener('click', function() {
+            // 1. Validar Lista
+            if (contador === 0) {
+                mensajeSistema(2, "La lista de áreas nuevas está vacía.");
+                return;
+            }
+
+            // 2. Validar Sustento
+            var txtSustento = document.getElementById("sustento").value.trim();
+            if (txtSustento === "") {
+                mensajeSistema(2, "El sustento es obligatorio. Indique el motivo de creación.");
+                return;
+            }
+
+            // 3. Confirmar
+            mensajeSistema(3, "¿Confirma el envío de esta solicitud de creación de áreas?", function() {
+                document.getElementById('form-agregar-areas').submit();
+            });
+        });
+
+        function reindexarFilasCola() {
+             const filas = tablaCola.querySelectorAll('tr');
+             filas.forEach((fila, index) => {
+                 fila.querySelectorAll('input').forEach(input => {
+                     if(input.name) input.name = input.name.replace(/\[\d+\]/, `[${index}]`);
+                 });
+             });
+             contador = filas.length;
+        }
+
+        function actualizarContador() {
+            const total = tablaCola.children.length;
+            document.getElementById('contador-items').innerText = `${total} ítems`;
+            btnEnviar.disabled = total === 0;
+        }
+    </script>
+}

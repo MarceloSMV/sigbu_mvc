@@ -1,0 +1,163 @@
+﻿@model IEnumerable<sigbu_mvc.Models.Bien>
+
+@{
+    ViewData["Title"] = "Consultar Inventario";
+}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold text-dark"><i class="bi bi-search"></i> Consultar Inventario</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+
+    <div class="card mb-4 shadow-sm border-light bg-light">
+        <div class="card-body p-3">
+            <form asp-action="Buscar" method="get">
+                <div class="row g-2 align-items-end">
+
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Código</label>
+                        <input type="text" name="codigo" class="form-control form-control-sm"
+                               value="@ViewData["filtroCodigo"]" placeholder="Buscar código..." />
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Serie</label>
+                        <input type="text" name="serie" class="form-control form-control-sm"
+                               value="@ViewData["filtroSerie"]" placeholder="Buscar serie..." />
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold text-muted">Área</label>
+                        <select name="area_id" class="form-select form-select-sm" asp-items="ViewBag.Areas">
+                            <option value="">-- Todas las Áreas --</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Estado</label>
+                        <select name="estado" class="form-select form-select-sm" asp-items="ViewBag.Estados">
+                            <option value="">-- Todos --</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 text-end">
+                        <button type="submit" class="btn btn-primary btn-sm px-4">
+                            <i class="bi bi-filter"></i> Buscar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-dark text-nowrap">
+                        <tr>
+                            <th class="text-center" style="width: 50px;">N°</th>
+                            <th>Código</th>
+                            <th>Serie</th>
+                            <th>Descripción</th>
+                            <th>Color</th>
+                            <th>Ubicación</th>
+                            <th>Área</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    No se encontraron bienes con los filtros seleccionados.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            int contador = 1;
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="text-center fw-bold text-secondary">@contador</td>
+                                    <td>@(item.codigo ?? "s/c")</td>
+                                    <td>@(item.serie ?? "s/s")</td>
+                                    <td>@item.descripcion</td>
+                                    <td>@item.color</td>
+                                    <td>@item.ubicacion</td>
+                                    <td>
+                                        @if (item.Area != null)
+                                        {
+                                            <span class="badge bg-info text-dark">@item.Area.nombre</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted fst-italic">Sin asignar</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.estado == "Bueno")
+                                        {
+                                            <span class="badge bg-success">Bueno</span>
+                                        }
+                                        else if (item.estado == "Regular")
+                                        {
+
+                                            <span class="badge bg-warning text-dark">Regular</span>
+                                        }
+                                        else
+                                        {
+
+                                            <span class="badge bg-danger">Malo</span>
+                                        }
+                                    </td>
+                                </tr>
+                                contador++;
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white border-top-0 py-3">
+            <small class="text-muted">Total de registros encontrados: <strong>@Model.Count()</strong></small>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Autocompletado para Código y Serie
+            $("input[name='codigo'], input[name='serie']").autocomplete({
+                source: function (request, response) {
+                    var campoActual = this.element.attr("name");
+
+                    $.ajax({
+                        url: '@Url.Action("Autocompletar", "Bienes")',
+                        type: "GET",
+                        dataType: "json",
+                        data: {
+                            term: request.term,
+                            campo: campoActual
+                        },
+                        success: function (data) {
+                            response(data);
+                        }
+                    });
+                },
+                minLength: 2
+            });
+        });
+    </script>
+}
