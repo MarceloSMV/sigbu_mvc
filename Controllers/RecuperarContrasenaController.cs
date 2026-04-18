@@ -255,7 +255,7 @@ namespace sigbu_mvc.Controllers
 
         private async Task<bool> VerificarRecaptcha(string token)
         {
-            string secretKey = ""; //tu clave secreta
+            string secretKey = "clave"; //tu clave secreta
             if (string.IsNullOrEmpty(token)) return false;
 
             using (var client = new HttpClient())
